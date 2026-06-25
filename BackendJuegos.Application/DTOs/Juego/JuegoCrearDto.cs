@@ -32,6 +32,7 @@ namespace BackendJuegos.Application.DTOs.Juego
         [Required(ErrorMessage = "Los ids de los generos son requeridos")]
         public List<int> GenerosIds { get; set; } = new();
 
+        [Required(ErrorMessage = "Los ids de las plataformas son requeridos")]
         public List<int> PlataformasIds { get; set; } = new();
 
         [Required(ErrorMessage = "El id del usuario desarrollador es requerido")]
