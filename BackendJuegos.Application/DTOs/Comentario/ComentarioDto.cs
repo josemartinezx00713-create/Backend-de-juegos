@@ -6,7 +6,7 @@ namespace BackendJuegos.Application.DTOs.Comentario
         public string Descripcion { get; set; } = null!;
         public DateOnly FechaRegistro { get; set; }
         public int IdJuego { get; set; }
-        public string? ApplicationUserId { get; set; }
+        //public string? ApplicationUserId { get; set; }
         public string? NombreUsuario { get; set; }
     }
 }

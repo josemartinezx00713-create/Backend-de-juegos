@@ -9,13 +9,13 @@ namespace BackendJuegos.Application.DTOs.Juego
         public string Nombre { get; set; } = null!;
 
         [Required(ErrorMessage = "La descripci�n del Juego es requerida")]
-        [MaxLength(500, ErrorMessage = "La descripci�n del Juego no puede exceder los 500 caracteres.")]
+        [MaxLength(500, ErrorMessage = "La descripción del Juego no puede exceder los 500 caracteres.")]
         public string Descripcion { get; set; } = null!;
 
         [MaxLength(500, ErrorMessage = "El Url del Juego no puede exceder los 500 caracteres")]
         public string PortadaURL { get; set; } = null!;
 
-        [Required(ErrorMessage = "La clasificaci�n del Juego es requerida.")]
+        [Required(ErrorMessage = "La clasificación del Juego es requerida.")]
         public int Clasificacion { get; set; }
 
         [Required(ErrorMessage = "Los requerimientos del Juego es requerido")]
