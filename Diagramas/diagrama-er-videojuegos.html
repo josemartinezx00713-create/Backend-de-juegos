@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diagrama ER - Catálogo de Videojuegos</title>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      er: {
+        useMaxWidth: true,
+        layoutDirection: 'LR'
+      },
+      themeVariables: {
+        background: '#ffffff',
+        primaryColor: '#dbeafe',
+        primaryTextColor: '#0f172a',
+        primaryBorderColor: '#2563eb',
+        lineColor: '#475569',
+        secondaryColor: '#dcfce7',
+        tertiaryColor: '#ffedd5'
+      }
+    });
+  </script>
+  <style>
+    :root {
+      --blue-bg: #dbeafe;
+      --blue-border: #2563eb;
+      --green-bg: #dcfce7;
+      --green-border: #16a34a;
+      --orange-bg: #ffedd5;
+      --orange-border: #ea580c;
+      --purple-bg: #f3e8ff;
+      --purple-border: #9333ea;
+      --text: #0f172a;
+      --muted: #475569;
+      --surface: #ffffff;
+      --bg: #f8fafc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 32px 20px 40px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 2rem;
+    }
+    p {
+      margin: 0 0 20px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      background: var(--surface);
+      border: 1px solid #cbd5e1;
+    }
+    .dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+    }
+    .diagram-card {
+      background: var(--surface);
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 20px;
+      overflow: auto;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+    .mermaid {
+      min-width: 1100px;
+    }
+    .notes {
+      margin-top: 18px;
+      padding: 16px 18px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      color: var(--muted);
+    }
+    .notes strong { color: var(--text); }
+    .dot.game { background: var(--blue-bg); border-color: var(--blue-border); }
+    .dot.dev { background: var(--green-bg); border-color: var(--green-border); }
+    .dot.pub { background: var(--orange-bg); border-color: var(--orange-border); }
+    .dot.genre { background: var(--purple-bg); border-color: var(--purple-border); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Diagrama Entidad-Relación</h1>
+    <p>API REST de catálogo de videojuegos en C# con ASP.NET Core, usando notación Crow's Foot con PK y FK marcadas explícitamente.</p>
+
+    <div class="legend">
+      <span class="chip"><span class="dot game"></span>Game</span>
+      <span class="chip"><span class="dot dev"></span>Developer</span>
+      <span class="chip"><span class="dot pub"></span>Publisher</span>
+      <span class="chip"><span class="dot genre"></span>Genre</span>
+    </div>
+
+    <div class="diagram-card">
+      <pre class="mermaid">
+%%{init: {
+  "theme": "base",
+  "themeCSS": "
+    .er.entityBox { stroke-width: 2px; rx: 10px; ry: 10px; }\n
+    .entityBox:has(+ .entityLabel:contains('Game')) { fill: #dbeafe; stroke: #2563eb; }\n
+    .er.relationshipLabelBox { fill: #ffffff; stroke: #cbd5e1; }\n
+    .er.attributeBoxOdd { fill: #f8fafc; }\n
+    .er.attributeBoxEven { fill: #ffffff; }\n
+    .er.entityLabel { font-weight: 700; }\n
+    g:has(> .entityLabel[text='Game']) .entityBox { fill: #dbeafe; stroke: #2563eb; }\n
+    g:has(> .entityLabel[text='Developer']) .entityBox { fill: #dcfce7; stroke: #16a34a; }\n
+    g:has(> .entityLabel[text='Publisher']) .entityBox { fill: #ffedd5; stroke: #ea580c; }\n
+    g:has(> .entityLabel[text='Genre']) .entityBox { fill: #f3e8ff; stroke: #9333ea; }\n
+  "
+}}%%
+erDiagram
+    DEVELOPER ||--o{ GAME : "1 a muchos"
+    PUBLISHER ||--o{ GAME : "1 a muchos"
+    GENRE ||--o{ GAME : "1 a muchos"
+
+    GAME {
+        int GameId PK
+        string Title "required, maxlength 200"
+        string Description "maxlength 500"
+        decimal Price "required"
+        int ReleaseYear
+        string CoverImageUrl
+        int DeveloperId FK
+        int PublisherId FK
+        int GenreId FK
+    }
+
+    DEVELOPER {
+        int DeveloperId PK
+        string Name "required, maxlength 150"
+        string Country
+    }
+
+    PUBLISHER {
+        int PublisherId PK
+        string Name "required, maxlength 150"
+        string Country
+    }
+
+    GENRE {
+        int GenreId PK
+        string Name "required, maxlength 100"
+    }
+      </pre>
+    </div>
+
+    <div class="notes">
+      <strong>Cardinalidades:</strong> cada <strong>Developer</strong>, <strong>Publisher</strong> y <strong>Genre</strong> se relaciona con cero o muchos <strong>Game</strong>, mientras que cada <strong>Game</strong> pertenece a exactamente un Developer, un Publisher y un Genre.
+    </div>
+  </div>
+</body>
+</html>

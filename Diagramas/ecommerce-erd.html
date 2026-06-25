@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ERD — E-commerce API (ASP.NET Core + EF)</title>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet"/>
+<style>
+:root,[data-theme="light"]{
+  --bg:#f7f6f2;--surface:#ffffff;--surface2:#f3f0ec;--border:#d4d1ca;
+  --text:#28251d;--muted:#7a7974;--faint:#bab9b4;
+  --primary:#01696f;--primary-h:#0c4e54;
+  --shadow:0 2px 8px rgba(0,0,0,.09),0 8px 24px rgba(0,0,0,.06);
+  --font:'Satoshi',sans-serif;
+  /* entity group colors */
+  --cat-hdr:#2563A8; --cat-bg:#dde8f5; --cat-border:#2563A8;
+  --prod-hdr:#1a4d85;--prod-bg:#b8d4f0;--prod-border:#1a4d85;
+  --usr-hdr:#B45309; --usr-bg:#fae3d0; --usr-border:#B45309;
+  --ord-hdr:#92610A; --ord-bg:#fff3cc; --ord-border:#92610A;
+  --join-hdr:#6D28D9;--join-bg:#e8d5f5;--join-border:#6D28D9;
+  --rev-hdr:#9B1C1C; --rev-bg:#f5dddd; --rev-border:#9B1C1C;
+}
+[data-theme="dark"]{
+  --bg:#171614;--surface:#1e1d1b;--surface2:#252422;--border:#3a3836;
+  --text:#cdccca;--muted:#797876;--faint:#5a5957;
+  --primary:#4f98a3;--primary-h:#3d7f8a;
+  --shadow:0 2px 8px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.3);
+  --cat-hdr:#3b7dd8; --cat-bg:#1a2d45; --cat-border:#3b7dd8;
+  --prod-hdr:#2660b0;--prod-bg:#152238;--prod-border:#2660b0;
+  --usr-hdr:#d97706; --usr-bg:#2e1f0a; --usr-border:#d97706;
+  --ord-hdr:#b97d1a; --ord-bg:#281c05; --ord-border:#b97d1a;
+  --join-hdr:#8b5cf6;--join-bg:#2a1a45;--join-border:#8b5cf6;
+  --rev-hdr:#dc2626; --rev-bg:#2d0d0d; --rev-border:#dc2626;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13px;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+.topbar h1{font-size:15px;font-weight:700;letter-spacing:-.02em}
+.topbar span{font-size:12px;color:var(--muted);margin-left:8px}
+.controls{display:flex;gap:8px;align-items:center}
+.btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:12px;font-family:var(--font);transition:background .18s}
+.btn:hover{background:var(--border)}
+.btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn-primary:hover{background:var(--primary-h)}
+.legend{display:flex;flex-wrap:wrap;gap:8px;padding:10px 24px;background:var(--surface);border-bottom:1px solid var(--border);font-size:11px}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-dot{width:10px;height:10px;border-radius:2px}
+#canvas-wrap{overflow:auto;padding:32px 24px;min-height:calc(100vh - 120px)}
+svg#erd{display:block;margin:0 auto}
+/* entity styles */
+.entity{cursor:pointer;transition:filter .2s}
+.entity:hover{filter:brightness(1.07)}
+.entity rect.frame{rx:8;ry:8;stroke-width:2}
+.entity .header{font-weight:700;font-size:12.5px}
+.entity .pk{font-weight:700;font-size:11.5px;fill:#d97706}
+.entity .fk{font-style:italic;font-size:11px;fill:var(--primary)}
+.entity .attr{font-size:11px}
+.entity .divider{stroke:var(--border);stroke-width:1}
+/* relation lines */
+.rel{stroke:#888;stroke-width:1.5;fill:none;marker-end:none}
+.rel-label{font-size:10px;fill:var(--muted)}
+/* crow's foot markers (drawn inline) */
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div>
+    <h1>ERD — E-commerce REST API</h1>
+    <span>ASP.NET Core · Entity Framework · Crow's Foot Notation</span>
+  </div>
+  <div class="controls">
+    <button class="btn" onclick="zoom(-.15)">− Zoom</button>
+    <button class="btn" onclick="zoom(.15)">+ Zoom</button>
+    <button class="btn" onclick="resetZoom()">Reset</button>
+    <button class="btn btn-primary" id="theme-toggle" onclick="toggleTheme()">☀ Light</button>
+    <button class="btn" onclick="copyPuml()">📋 PlantUML</button>
+  </div>
+</div>
+
+<div class="legend">
+  <strong style="font-size:11px;margin-right:4px">Grupos:</strong>
+  <div class="legend-item"><div class="legend-dot" style="background:#2563A8"></div> Catálogo (Category, Brand, Supplier)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#1a4d85"></div> Producto (Product)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#B45309"></div> Usuario (User, ShippingAddress)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#92610A"></div> Compras (Order, Cart)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#6D28D9"></div> Unión (OrderItem, CartItem)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#9B1C1C"></div> Interacción (Review)</div>
+  <div class="legend-item" style="margin-left:12px"><span style="color:#d97706;font-weight:700">PK</span> = Primary Key</div>
+  <div class="legend-item"><span style="color:#4f98a3;font-style:italic">FK</span> = Foreign Key</div>
+</div>
+
+<div id="canvas-wrap">
+<svg id="erd" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+
+<textarea id="puml-store" style="display:none">@startuml ecommerce_erd
+' Generated ERD for E-commerce API (ASP.NET Core + EF)
+' Crow\'s Foot Notation
+
+entity Category {
+  * CategoryId : INT <<PK>>
+  --
+  Name : VARCHAR(100) NOT NULL
+  Description : VARCHAR
+}
+
+entity Product {
+  * ProductId : INT <<PK>>
+  --
+  Name : VARCHAR(150) NOT NULL
+  Description : VARCHAR(500)
+  Price : DECIMAL NOT NULL
+  Stock : INT NOT NULL
+  ImageUrl : VARCHAR
+  IsDeleted : BOOL DEFAULT false
+  CreatedAt : DATETIME
+  --
+  CategoryId : INT <<FK>>
+  SupplierId : INT <<FK>>
+  BrandId : INT <<FK>>
+}
+
+entity Brand {
+  * BrandId : INT <<PK>>
+  --
+  Name : VARCHAR(100) NOT NULL
+  LogoUrl : VARCHAR
+  Country : VARCHAR
+}
+
+entity Supplier {
+  * SupplierId : INT <<PK>>
+  --
+  Name : VARCHAR(150) NOT NULL
+  ContactEmail : VARCHAR
+  Phone : VARCHAR
+  Country : VARCHAR
+}
+
+entity User {
+  * UserId : INT <<PK>>
+  --
+  FullName : VARCHAR NOT NULL
+  Email : VARCHAR UNIQUE NOT NULL
+  PasswordHash : VARCHAR NOT NULL
+  Role : ENUM("Admin","Customer")
+  CreatedAt : DATETIME
+}
+
+entity ShippingAddress {
+  * AddressId : INT <<PK>>
+  --
+  Street : VARCHAR NOT NULL
+  City : VARCHAR NOT NULL
+  State : VARCHAR
+  ZipCode : VARCHAR
+  Country : VARCHAR
+  --
+  UserId : INT <<FK>>
+}
+
+entity Order {
+  * OrderId : INT <<PK>>
+  --
+  OrderDate : DATETIME
+  Status : ENUM("Pending","Processing","Shipped","Delivered","Cancelled")
+  TotalAmount : DECIMAL
+  --
+  UserId : INT <<FK>>
+  AddressId : INT <<FK>>
+}
+
+entity OrderItem {
+  * OrderItemId : INT <<PK>>
+  --
+  Quantity : INT NOT NULL
+  UnitPrice : DECIMAL NOT NULL
+  --
+  OrderId : INT <<FK>>
+  ProductId : INT <<FK>>
+}
+
+entity Cart {
+  * CartId : INT <<PK>>
+  --
+  CreatedAt : DATETIME
+  --
+  UserId : INT <<FK, UNIQUE>>
+}
+
+entity CartItem {
+  * CartItemId : INT <<PK>>
+  --
+  Quantity : INT
+  --
+  CartId : INT <<FK>>
+  ProductId : INT <<FK>>
+}
+
+entity Review {
+  * ReviewId : INT <<PK>>
+  --
+  Rating : INT CHECK(1..5)
+  Comment : VARCHAR(500)
+  CreatedAt : DATETIME
+  --
+  UserId : INT <<FK>>
+  ProductId : INT <<FK>>
+}
+
+Category ||--|{ Product : "categorizes"
+Brand    ||--|{ Product : "brands"
+Supplier ||--|{ Product : "supplies"
+User     ||--|{ Order : "places"
+User     ||--|{ ShippingAddress : "has"
+User     ||--|| Cart : "owns"
+Order    }o--o{ ShippingAddress : "ships to"
+Order    ||--|{ OrderItem : "contains"
+Product  ||--|{ OrderItem : "included in"
+Cart     ||--|{ CartItem : "contains"
+Product  ||--|{ CartItem : "added to"
+User     ||--|{ Review : "writes"
+Product  ||--|{ Review : "reviewed by"
+@enduml</textarea>
+
+<script>
+// ─── DATA ──────────────────────────────────────────────────────
+const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+
+const entities = [
+  // CATÁLOGO
+  { id:'Category',  group:'cat',  x:40,   y:60,
+    attrs:[
+      {t:'pk', l:'CategoryId : INT IDENTITY'},
+      {t:'div'},
+      {t:'a',  l:'Name : VARCHAR(100) NOT NULL'},
+      {t:'a',  l:'Description : VARCHAR'},
+    ]},
+  { id:'Brand',     group:'cat',  x:40,   y:260,
+    attrs:[
+      {t:'pk', l:'BrandId : INT IDENTITY'},
+      {t:'div'},
+      {t:'a',  l:'Name : VARCHAR(100) NOT NULL'},
+      {t:'a',  l:'LogoUrl : VARCHAR'},
+      {t:'a',  l:'Country : VARCHAR'},
+    ]},
+  { id:'Supplier',  group:'cat',  x:40,   y:490,
+    attrs:[
+      {t:'pk', l:'SupplierId : INT IDENTITY'},
+      {t:'div'},
+      {t:'a',  l:'Name : VARCHAR(150) NOT NULL'},
+      {t:'a',  l:'ContactEmail : VARCHAR'},
+      {t:'a',  l:'Phone : VARCHAR'},
+      {t:'a',  l:'Country : VARCHAR'},
+    ]},
+  // PRODUCTO
+  { id:'Product',   group:'prod', x:320,  y:200,
+    attrs:[
+      {t:'pk', l:'ProductId : INT IDENTITY'},
+      {t:'div'},
+      {t:'a',  l:'Name : VARCHAR(150) NOT NULL'},
+      {t:'a',  l:'Description : VARCHAR(500)'},
+      {t:'a',  l:'Price : DECIMAL NOT NULL'},
+      {t:'a',  l:'Stock : INT NOT NULL'},
+      {t:'a',  l:'ImageUrl : VARCHAR'},
+      {t:'a',  l:'IsDeleted : BOOL DEFAULT false'},
+      {t:'a',  l:'CreatedAt : DATETIME'},
+      {t:'div'},
+      {t:'fk', l:'CategoryId : INT'},
+      {t:'fk', l:'SupplierId : INT'},
+      {t:'fk', l:'BrandId : INT'},
+    ]},
+  // USUARIO
+  { id:'User',       group:'usr',  x:660,  y:60,
+    attrs:[
+      {t:'pk', l:'UserId : INT IDENTITY'},
+      {t:'div'},
+      {t:'a',  l:'FullName : VARCHAR NOT NULL'},
+      {t:'a',  l:'Email : VARCHAR UNIQUE NOT NULL'},
+      {t:'a',  l:'PasswordHash : VARCHAR NOT NULL'},
+      {t:'a',  l:'Role : ENUM("Admin"|"Customer")'},
+      {t:'a',  l:'CreatedAt : DATETIME'},
+    ]},
+  { id:'ShippingAddress', group:'usr', x:660, y:360,
+    attrs:[
+      {t:'pk', l:'AddressId : INT IDENTITY'},
+      {t:'div'},
+      {t:'a',  l:'Street : VARCHAR NOT NULL'},
+      {t:'a',  l:'City : VARCHAR NOT NULL'},
+      {t:'a',  l:'State : VARCHAR'},
+      {t:'a',  l:'ZipCode : VARCHAR'},
+      {t:'a',  l:'Country : VARCHAR'},
+      {t:'div'},
+      {t:'fk', l:'UserId : INT'},
+    ]},
+  // COMPRAS
+  { id:'Order',      group:'ord',  x:950,  y:200,
+    attrs:[
+      {t:'pk', l:'OrderId : INT IDENTITY'},
+      {t:'div'},
+      {t:'a',  l:'OrderDate : DATETIME'},
+      {t:'a',  l:'Status : ENUM(Pending|Processing|...Cancelled)'},
+      {t:'a',  l:'TotalAmount : DECIMAL'},
+      {t:'div'},
+      {t:'fk', l:'UserId : INT'},
+      {t:'fk', l:'AddressId : INT'},
+    ]},
+  { id:'Cart',       group:'ord',  x:950,  y:490,
+    attrs:[
+      {t:'pk', l:'CartId : INT IDENTITY'},
+      {t:'div'},
+      {t:'a',  l:'CreatedAt : DATETIME'},
+      {t:'div'},
+      {t:'fk', l:'UserId : INT UNIQUE'},
+    ]},
+  // UNIÓN
+  { id:'OrderItem',  group:'join', x:660,  y:620,
+    attrs:[
+      {t:'pk', l:'OrderItemId : INT IDENTITY'},
+      {t:'div'},
+      {t:'a',  l:'Quantity : INT NOT NULL'},
+      {t:'a',  l:'UnitPrice : DECIMAL NOT NULL'},
+      {t:'div'},
+      {t:'fk', l:'OrderId : INT'},
+      {t:'fk', l:'ProductId : INT'},
+    ]},
+  { id:'CartItem',   group:'join', x:660,  y:830,
+    attrs:[
+      {t:'pk', l:'CartItemId : INT IDENTITY'},
+      {t:'div'},
+      {t:'a',  l:'Quantity : INT'},
+      {t:'div'},
+      {t:'fk', l:'CartId : INT'},
+      {t:'fk', l:'ProductId : INT'},
+    ]},
+  // INTERACCIÓN
+  { id:'Review',     group:'rev',  x:320,  y:690,
+    attrs:[
+      {t:'pk', l:'ReviewId : INT IDENTITY'},
+      {t:'div'},
+      {t:'a',  l:'Rating : INT CHECK(1..5)'},
+      {t:'a',  l:'Comment : VARCHAR(500)'},
+      {t:'a',  l:'CreatedAt : DATETIME'},
+      {t:'div'},
+      {t:'fk', l:'UserId : INT'},
+      {t:'fk', l:'ProductId : INT'},
+    ]},
+];
+
+// relations: from, to, fromCard (1|N|0), toCard (1|N|0), label
+// card: '1'=one, 'N'=many, '0'=optional-one, '0N'=optional-many
+const relations = [
+  {from:'Category',      to:'Product',        fc:'1', tc:'N', lbl:'categorizes'},
+  {from:'Brand',         to:'Product',        fc:'1', tc:'N', lbl:'brands'},
+  {from:'Supplier',      to:'Product',        fc:'1', tc:'N', lbl:'supplies'},
+  {from:'User',          to:'Order',          fc:'1', tc:'N', lbl:'places'},
+  {from:'User',          to:'ShippingAddress',fc:'1', tc:'N', lbl:'has'},
+  {from:'User',          to:'Cart',           fc:'1', tc:'1', lbl:'owns (unique)'},
+  {from:'Order',         to:'ShippingAddress',fc:'1', tc:'1', lbl:'ships to'},
+  {from:'Order',         to:'OrderItem',      fc:'1', tc:'N', lbl:'contains'},
+  {from:'Product',       to:'OrderItem',      fc:'1', tc:'N', lbl:'included in'},
+  {from:'Cart',          to:'CartItem',       fc:'1', tc:'N', lbl:'contains'},
+  {from:'Product',       to:'CartItem',       fc:'1', tc:'N', lbl:'added to'},
+  {from:'User',          to:'Review',         fc:'1', tc:'N', lbl:'writes'},
+  {from:'Product',       to:'Review',         fc:'1', tc:'N', lbl:'reviewed by'},
+];
+
+// ─── THEME COLORS ──────────────────────────────────────────────
+const groupColors = {
+  cat:  {hdr:'#2563A8', bg_l:'#dde8f5', bg_d:'#1a2d45', bd:'#2563A8'},
+  prod: {hdr:'#1a4d85', bg_l:'#c5d9f0', bg_d:'#152238', bd:'#1a4d85'},
+  usr:  {hdr:'#B45309', bg_l:'#fae3d0', bg_d:'#2e1f0a', bd:'#B45309'},
+  ord:  {hdr:'#92610A', bg_l:'#fff3cc', bg_d:'#281c05', bd:'#92610A'},
+  join: {hdr:'#6D28D9', bg_l:'#e8d5f5', bg_d:'#2a1a45', bd:'#6D28D9'},
+  rev:  {hdr:'#9B1C1C', bg_l:'#f5dddd', bg_d:'#2d0d0d', bd:'#9B1C1C'},
+};
+
+// ─── LAYOUT CONSTANTS ──────────────────────────────────────────
+const W = 220, ROW = 17, HDR = 28, PAD = 8;
+
+function entityHeight(e){
+  let h = HDR + PAD;
+  for(const a of e.attrs){ h += (a.t==='div')?8:ROW; }
+  return h + PAD;
+}
+
+function entityBounds(e){
+  return {x:e.x, y:e.y, w:W, h:entityHeight(e)};
+}
+
+function getBorderPoint(e, angle){
+  // returns {x,y} on border of entity rectangle closest to given angle (rad)
+  const b = entityBounds(e);
+  const cx = b.x + b.w/2, cy = b.y + b.h/2;
+  const dx = Math.cos(angle), dy = Math.sin(angle);
+  // parametric: t such that |cx+t*dx - b.x| = w/2 or |cy+t*dy - b.y| = h/2
+  const tx = dx !== 0 ? (b.w/2)/Math.abs(dx) : Infinity;
+  const ty = dy !== 0 ? (b.h/2)/Math.abs(dy) : Infinity;
+  const t = Math.min(tx, ty);
+  return {x: cx + dx*t, y: cy + dy*t};
+}
+
+function closestPoints(a, b){
+  const ac = {x: a.x + W/2, y: a.y + entityHeight(a)/2};
+  const bc = {x: b.x + W/2, y: b.y + entityHeight(b)/2};
+  const ang = Math.atan2(bc.y - ac.y, bc.x - ac.x);
+  const p1 = getBorderPoint(a, ang);
+  const p2 = getBorderPoint(b, ang + Math.PI);
+  return {p1, p2};
+}
+
+// ─── SVG HELPERS ───────────────────────────────────────────────
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent){
+  const e = document.createElementNS(NS, tag);
+  for(const [k,v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if(parent) parent.appendChild(e);
+  return e;
+}
+function txt(str, attrs, parent){
+  const e = el('text', attrs, parent);
+  e.textContent = str;
+  return e;
+}
+
+// ─── CROW'S FOOT MARKERS ───────────────────────────────────────
+// draw crow's foot at point p facing direction dir (angle)
+// card: '1' = single bar, 'N' = crow's foot (three lines), '0' = circle+bar, '0N' = circle+crow
+function drawMarker(svg, p, dir, card, color){
+  const g = el('g', {}, svg);
+  const perp = dir + Math.PI/2;
+  const sz = 10, gap = 5;
+
+  const cos = Math.cos(dir), sin = Math.sin(dir);
+  const cp = Math.cos(perp), sp = Math.sin(perp);
+
+  // base point (at entity border, offset inward)
+  const bx = p.x + cos*gap, by = p.y + sin*gap;
+
+  if(card === '1'){
+    // two vertical bars (mandatory one)
+    for(const d of [0, sz*0.6]){
+      const ox = bx + cos*d, oy = by + sin*d;
+      el('line',{x1:ox+cp*sz*0.5,y1:oy+sp*sz*0.5,x2:ox-cp*sz*0.5,y2:oy-sp*sz*0.5,stroke:color,'stroke-width':2}, g);
+    }
+  } else if(card === 'N'){
+    // crow's foot: center line + two angled outer lines
+    const tip = {x: bx + cos*sz, y: by + sin*sz};
+    el('line',{x1:bx+cp*sz*0.55,y1:by+sp*sz*0.55,x2:tip.x,y2:tip.y,stroke:color,'stroke-width':1.8}, g);
+    el('line',{x1:bx-cp*sz*0.55,y1:by-sp*sz*0.55,x2:tip.x,y2:tip.y,stroke:color,'stroke-width':1.8}, g);
+    el('line',{x1:bx,y1:by,x2:tip.x,y2:tip.y,stroke:color,'stroke-width':1.8}, g);
+    // single bar at base
+    el('line',{x1:bx+cp*sz*0.5,y1:by+sp*sz*0.5,x2:bx-cp*sz*0.5,y2:by-sp*sz*0.5,stroke:color,'stroke-width':2}, g);
+  }
+}
+
+// ─── RENDER ────────────────────────────────────────────────────
+let scale = 1;
+let svgW = 1240, svgH = 1050;
+
+function render(){
+  const dark = isDark();
+  const svg = document.getElementById('erd');
+  svg.innerHTML = '';
+  svg.setAttribute('width', svgW * scale);
+  svg.setAttribute('height', svgH * scale);
+  svg.setAttribute('viewBox', `0 0 ${svgW} ${svgH}`);
+
+  const bg = dark ? '#171614' : '#f7f6f2';
+  el('rect',{x:0,y:0,width:svgW,height:svgH,fill:bg,rx:12}, svg);
+
+  const textCol = dark ? '#cdccca' : '#28251d';
+  const mutedCol = dark ? '#9a9896' : '#7a7974';
+  const borderCol = dark ? '#3a3836' : '#d4d1ca';
+  const lineCol = dark ? '#666' : '#999';
+
+  // build entity map
+  const map = {};
+  for(const e of entities) map[e.id] = e;
+
+  // ── draw relations first (behind entities)
+  for(const r of relations){
+    const a = map[r.from], b = map[r.to];
+    const {p1, p2} = closestPoints(a, b);
+    const color = lineCol;
+
+    // line
+    el('line',{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,stroke:color,'stroke-width':1.5,'stroke-dasharray':'none'}, svg);
+
+    // markers
+    const ang12 = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+    const ang21 = ang12 + Math.PI;
+    drawMarker(svg, p1, ang21, r.fc, color); // at 'from' side (direction away from it = toward target)
+    drawMarker(svg, p2, ang12, r.tc, color); // at 'to' side
+
+    // label
+    const mx = (p1.x + p2.x)/2, my = (p1.y + p2.y)/2;
+    const labelBg = el('rect',{x:mx-30,y:my-8,width:70,height:14,fill:bg,rx:3,opacity:.85}, svg);
+    txt(r.lbl,{x:mx+5,y:my+3,'text-anchor':'middle',fill:mutedCol,'font-size':'9.5','font-family':'Satoshi,sans-serif'}, svg);
+  }
+
+  // ── draw entities
+  for(const e of entities){
+    const gc = groupColors[e.group];
+    const bgColor = dark ? gc.bg_d : gc.bg_l;
+    const hdrColor = gc.hdr;
+    const bdColor = gc.bd;
+    const h = entityHeight(e);
+
+    const g = el('g',{class:'entity',transform:`translate(${e.x},${e.y})`}, svg);
+
+    // shadow
+    el('rect',{x:3,y:3,width:W,height:h,rx:8,ry:8,fill:'rgba(0,0,0,0.15)'}, g);
+    // body
+    el('rect',{x:0,y:0,width:W,height:h,rx:8,ry:8,fill:bgColor,stroke:bdColor,'stroke-width':2}, g);
+    // header bg
+    el('rect',{x:0,y:0,width:W,height:HDR,rx:8,ry:8,fill:hdrColor}, g);
+    el('rect',{x:0,y:HDR-8,width:W,height:8,fill:hdrColor}, g);
+
+    // header text
+    txt(e.id,{x:W/2,y:HDR-8,'text-anchor':'middle','dominant-baseline':'middle',fill:'#fff',
+      'font-size':'13','font-weight':'700','font-family':'Satoshi,sans-serif'}, g);
+
+    // attributes
+    let cy = HDR + PAD + 4;
+    for(const a of e.attrs){
+      if(a.t === 'div'){
+        el('line',{x1:8,y1:cy,x2:W-8,y2:cy,stroke:bdColor,'stroke-width':0.8,opacity:.5}, g);
+        cy += 8;
+      } else {
+        const fillCol = a.t==='pk' ? '#d97706' : a.t==='fk' ? (dark?'#5bb5bf':'#01696f') : textCol;
+        const fw = a.t==='pk' ? '700' : '400';
+        const prefix = a.t==='pk' ? '🔑 ' : a.t==='fk' ? '🔗 ' : '   ';
+        txt(prefix + a.l,{x:10,y:cy,'font-size':'10.5','font-family':'Satoshi,sans-serif',
+          fill:fillCol,'font-weight':fw,'font-style':a.t==='fk'?'italic':'normal'}, g);
+        cy += ROW;
+      }
+    }
+  }
+
+  // ── group labels
+  const groups = [
+    {lbl:'📦 Catálogo', x:40, y:40},
+    {lbl:'🛍 Producto', x:320, y:180},
+    {lbl:'👤 Usuario', x:660, y:40},
+    {lbl:'🛒 Compras', x:950, y:180},
+    {lbl:'🔗 Unión', x:660, y:600},
+    {lbl:'⭐ Interacción', x:320, y:670},
+  ];
+  for(const gl of groups){
+    txt(gl.lbl,{x:gl.x,y:gl.y,'font-size':'11','font-weight':'700','font-family':'Satoshi,sans-serif',
+      fill:mutedCol,opacity:.8}, svg);
+  }
+}
+
+// ─── ZOOM ──────────────────────────────────────────────────────
+function zoom(delta){ scale = Math.max(.4, Math.min(2, scale+delta)); render(); }
+function resetZoom(){ scale = 1; render(); }
+
+// ─── THEME ─────────────────────────────────────────────────────
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  document.getElementById('theme-toggle').textContent = next === 'dark' ? '☀ Light' : '🌙 Dark';
+  render();
+}
+
+// ─── COPY PLANTUML ─────────────────────────────────────────────
+function copyPuml(){
+  const t = document.getElementById('puml-store').value;
+  navigator.clipboard.writeText(t).then(()=>{
+    const b = document.querySelector('[onclick="copyPuml()"]');
+    const orig = b.textContent;
+    b.textContent = '✅ Copied!';
+    setTimeout(()=>b.textContent = orig, 2000);
+  });
+}
+
+// ─── INIT ──────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>

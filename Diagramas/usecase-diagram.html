@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Diagrama de Casos de Uso — E-commerce API</title>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet"/>
+<style>
+:root,[data-theme="light"]{
+  --bg:#f7f6f2;--surface:#ffffff;--surface2:#f3f0ec;--border:#d4d1ca;
+  --text:#28251d;--muted:#7a7974;--faint:#bab9b4;
+  --primary:#01696f;--primary-h:#0c4e52;
+  --shadow:0 2px 8px rgba(0,0,0,.09),0 8px 24px rgba(0,0,0,.06);
+  --font:'Satoshi',sans-serif;
+}
+[data-theme="dark"]{
+  --bg:#171614;--surface:#1e1d1b;--surface2:#252422;--border:#3a3836;
+  --text:#cdccca;--muted:#9a9896;--faint:#5a5957;
+  --primary:#4f98a3;--primary-h:#3d7f8a;
+  --shadow:0 2px 8px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.3);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13px;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;
+  background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;
+  box-shadow:var(--shadow)}
+.topbar h1{font-size:14px;font-weight:700;letter-spacing:-.02em}
+.topbar span{font-size:11px;color:var(--muted);margin-left:8px}
+.controls{display:flex;gap:6px;align-items:center}
+.btn{padding:5px 11px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);
+  color:var(--text);cursor:pointer;font-size:11px;font-family:var(--font);transition:background .18s}
+.btn:hover{background:var(--border)}
+.btn-p{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn-p:hover{background:var(--primary-h)}
+.legend{display:flex;flex-wrap:wrap;gap:10px;padding:8px 20px;background:var(--surface);
+  border-bottom:1px solid var(--border);font-size:10.5px;align-items:center}
+.ld{display:flex;align-items:center;gap:5px}
+.ldot{width:12px;height:12px;border-radius:2px}
+#wrap{overflow:auto;padding:24px;min-height:calc(100vh - 96px)}
+svg#ucd{display:block;margin:0 auto}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div>
+    <h1>Diagrama de Casos de Uso UML — E-commerce API</h1>
+    <span>ASP.NET Core · REST API · Notación UML estándar</span>
+  </div>
+  <div class="controls">
+    <button class="btn" onclick="zoom(-.15)">− Zoom</button>
+    <button class="btn" onclick="zoom(.15)">+ Zoom</button>
+    <button class="btn" onclick="resetZoom()">Reset</button>
+    <button class="btn btn-p" id="thm" onclick="toggleTheme()">☀ Light</button>
+  </div>
+</div>
+<div class="legend">
+  <strong style="margin-right:4px">Módulos:</strong>
+  <div class="ld"><div class="ldot" style="background:#2563A8"></div>Autenticación</div>
+  <div class="ld"><div class="ldot" style="background:#2E7D32"></div>Catálogo</div>
+  <div class="ld"><div class="ldot" style="background:#92610A"></div>Carrito</div>
+  <div class="ld"><div class="ldot" style="background:#7B3F00"></div>Pedidos</div>
+  <div class="ld"><div class="ldot" style="background:#6D28D9"></div>Administración</div>
+  <div class="ld"><div class="ldot" style="background:#9B1C1C"></div>Sistema</div>
+  <div style="margin-left:10px;display:flex;gap:14px">
+    <div class="ld"><span style="font-weight:700">——</span> Asociación actor-UC</div>
+    <div class="ld"><span style="color:#2563A8;font-weight:700">- - -</span> &lt;&lt;include&gt;&gt;</div>
+    <div class="ld"><span style="color:#9B1C1C;font-weight:700">- - -</span> &lt;&lt;extend&gt;&gt;</div>
+    <div class="ld"><span style="color:#888;font-weight:700">— —</span> Actor-Sistema</div>
+  </div>
+</div>
+<div id="wrap"><svg id="ucd" xmlns="http://www.w3.org/2000/svg"></svg></div>
+
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+let scale = 1;
+const W = 1340, H = 1120;
+
+function el(tag, attrs, parent){
+  const e = document.createElementNS(NS, tag);
+  for(const[k,v] of Object.entries(attrs)) e.setAttribute(k,v);
+  if(parent) parent.appendChild(e);
+  return e;
+}
+function txt(s, attrs, parent){
+  const e = el('text', attrs, parent);
+  e.textContent = s;
+  return e;
+}
+
+// ── Use-case oval
+function drawUC(svg, id, x, y, w, h, label, modColor, dark){
+  const bg = dark ? modColor.bgd : modColor.bgl;
+  const g = el('g',{id:'uc_'+id}, svg);
+  el('ellipse',{cx:x,cy:y,rx:w/2,ry:h/2,fill:bg,stroke:modColor.bd,'stroke-width':1.8}, g);
+  // split label if too long
+  const words = label.split(' ');
+  if(words.length <= 3 || label.length < 22){
+    txt(label,{x,y,'text-anchor':'middle','dominant-baseline':'middle',
+      'font-size':'10','font-family':'Satoshi,sans-serif',fill:dark?'#d0ccc8':'#28251d','font-weight':'500'}, g);
+  } else {
+    // two lines
+    const mid = Math.ceil(words.length/2);
+    const l1 = words.slice(0,mid).join(' ');
+    const l2 = words.slice(mid).join(' ');
+    txt(l1,{x,y:y-6,'text-anchor':'middle','dominant-baseline':'middle',
+      'font-size':'10','font-family':'Satoshi,sans-serif',fill:dark?'#d0ccc8':'#28251d','font-weight':'500'}, g);
+    txt(l2,{x,y:y+7,'text-anchor':'middle','dominant-baseline':'middle',
+      'font-size':'10','font-family':'Satoshi,sans-serif',fill:dark?'#d0ccc8':'#28251d','font-weight':'500'}, g);
+  }
+  return g;
+}
+
+// ── Stickman actor
+function drawActor(svg, x, y, label, dark){
+  const c = dark ? '#cdccca' : '#28251d';
+  const g = el('g',{}, svg);
+  // head
+  el('circle',{cx:x,cy:y,r:10,fill:'none',stroke:c,'stroke-width':2}, g);
+  // body
+  el('line',{x1:x,y1:y+10,x2:x,y2:y+36,stroke:c,'stroke-width':2}, g);
+  // arms
+  el('line',{x1:x-14,y1:y+20,x2:x+14,y2:y+20,stroke:c,'stroke-width':2}, g);
+  // legs
+  el('line',{x1:x,y1:y+36,x2:x-12,y2:y+54,stroke:c,'stroke-width':2}, g);
+  el('line',{x1:x,y1:y+36,x2:x+12,y2:y+54,stroke:c,'stroke-width':2}, g);
+  // label
+  const words = label.split(' ');
+  words.forEach((w,i)=>{
+    txt(w,{x,y:y+64+i*13,'text-anchor':'middle','font-size':'11',
+      'font-family':'Satoshi,sans-serif',fill:c,'font-weight':'600'}, g);
+  });
+  return g;
+}
+
+// ── Module box (rounded rect + label)
+function drawModule(svg, x, y, w, h, label, modColor, dark){
+  const bg = dark ? modColor.bgd2 : modColor.bgl2;
+  el('rect',{x,y,width:w,height:h,rx:10,ry:10,fill:bg,stroke:modColor.bd,
+    'stroke-width':1.5,'stroke-dasharray':'6,3'}, svg);
+  txt(label,{x:x+10,y:y+16,'font-size':'11','font-weight':'700',
+    'font-family':'Satoshi,sans-serif',fill:modColor.bd}, svg);
+}
+
+// ── Line with optional arrow and label
+function drawLine(svg, x1,y1,x2,y2, color, dashed, arrowLabel, dark){
+  const dash = dashed ? '6,4' : 'none';
+  el('line',{x1,y1,x2,y2,stroke:color,'stroke-width':1.4,'stroke-dasharray':dash}, svg);
+  if(arrowLabel){
+    // open arrowhead at end
+    const ang = Math.atan2(y2-y1, x2-x1);
+    const ax = x2 - 12*Math.cos(ang), ay = y2 - 12*Math.sin(ang);
+    el('polyline',{
+      points:`${ax+6*Math.cos(ang+Math.PI/2)},${ay+6*Math.sin(ang+Math.PI/2)} ${x2},${y2} ${ax+6*Math.cos(ang-Math.PI/2)},${ay+6*Math.sin(ang-Math.PI/2)}`,
+      fill:'none',stroke:color,'stroke-width':1.4
+    }, svg);
+    // stereotype label
+    const mx=(x1+x2)/2, my=(y1+y2)/2;
+    const bg = dark ? '#252422' : '#f7f6f2';
+    el('rect',{x:mx-32,y:my-9,width:64,height:13,fill:bg,rx:3,opacity:.9}, svg);
+    txt(arrowLabel,{x:mx,y:my+1,'text-anchor':'middle','font-size':'9',
+      'font-family':'Satoshi,sans-serif',fill:color,'font-style':'italic'}, svg);
+  }
+}
+
+// ── Association (solid, no arrow)
+function assoc(svg, x1,y1,x2,y2, dark){
+  const c = dark ? '#888' : '#555';
+  el('line',{x1,y1,x2,y2,stroke:c,'stroke-width':1.5}, svg);
+}
+
+// ── Color palettes per module
+const MOD = {
+  auth:  {bd:'#2563A8',bgl:'#dde8f5',bgd:'#192640',bgl2:'#eef4fc',bgd2:'#111c2e'},
+  cat:   {bd:'#2E7D32',bgl:'#d9f0da',bgd:'#122a14',bgl2:'#edf7ee',bgd2:'#0c1f0e'},
+  cart:  {bd:'#92610A',bgl:'#fff3cc',bgd:'#2a1c05',bgl2:'#fffae8',bgd2:'#1c1303'},
+  order: {bd:'#7B3F00',bgl:'#fde0c8',bgd:'#2a1205',bgl2:'#fef0e4',bgd2:'#1c0d03'},
+  admin: {bd:'#6D28D9',bgl:'#ede0f8',bgd:'#200d45',bgl2:'#f5eefe',bgd2:'#160930'},
+  sys:   {bd:'#9B1C1C',bgl:'#fde8e8',bgd:'#2d0d0d',bgl2:'#fff0f0',bgd2:'#1f0808'},
+};
+
+function render(){
+  const dark = isDark();
+  const svg = document.getElementById('ucd');
+  svg.innerHTML = '';
+  svg.setAttribute('width', W*scale);
+  svg.setAttribute('height', H*scale);
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  const bg = dark ? '#171614' : '#f7f6f2';
+  const tc = dark ? '#cdccca' : '#28251d';
+  const mc = dark ? '#9a9896' : '#7a7974';
+  const bc = dark ? '#3a3836' : '#c8c4be';
+
+  // Background
+  el('rect',{x:0,y:0,width:W,height:H,fill:bg,rx:14}, svg);
+
+  // ═══════════════════════════════════════════
+  // SYSTEM BOUNDARY BOX
+  // ═══════════════════════════════════════════
+  el('rect',{x:130,y:22,width:1070,height:1080,rx:12,ry:12,
+    fill:'none',stroke:bc,'stroke-width':2.5}, svg);
+  // System title
+  el('rect',{x:130,y:14,width:280,height:24,rx:5,fill:bg}, svg);
+  txt('Sistema E-Commerce API',{x:270,y:30,'text-anchor':'middle','font-size':'13',
+    'font-weight':'700','font-family':'Satoshi,sans-serif',fill:tc}, svg);
+
+  // ═══════════════════════════════════════════
+  // MODULE: AUTENTICACIÓN  (top-left inside box)
+  // ═══════════════════════════════════════════
+  drawModule(svg, 145, 38, 310, 160, '🔐 Autenticación', MOD.auth, dark);
+  const UC = {}; // store center points
+  const ucW = 160, ucH = 40;
+
+  // UC positions: [id, x, y, label, mod]
+  const ucDefs = [
+    // AUTH
+    ['registrarse',     305, 90,  'Registrarse',               'auth'],
+    ['login',           305, 152, 'Iniciar sesión',             'auth'],
+
+    // CATÁLOGO
+    ['ver_catalogo',    545, 80,  'Ver catálogo de productos',  'cat'],
+    ['buscar',          545, 140, 'Buscar y filtrar productos', 'cat'],
+    ['ver_detalle',     545, 200, 'Ver detalle de un producto', 'cat'],
+
+    // CARRITO
+    ['agregar',         800, 80,  'Agregar al carrito',        'cart'],
+    ['modificar',       800, 140, 'Modificar cantidad',        'cart'],
+    ['eliminar',        800, 200, 'Eliminar del carrito',      'cart'],
+
+    // PEDIDOS
+    ['realizar',        545, 350, 'Realizar pedido',           'order'],
+    ['sel_dir',         545, 430, 'Seleccionar dirección',     'order'],
+    ['vaciar',          545, 510, 'Vaciar carrito',            'order'],
+    ['historial',       800, 320, 'Ver historial de pedidos',  'order'],
+    ['det_pedido',      800, 390, 'Ver detalle de un pedido',  'order'],
+    ['reseña',          800, 460, 'Dejar reseña en producto',  'order'],
+    ['haber_pedido',    800, 530, 'Haber realizado pedido del producto', 'order'],
+    ['gestionar_dir',   545, 590, 'Gestionar direcciones de envío', 'order'],
+
+    // ADMINISTRACIÓN
+    ['gest_prod',       350, 720, 'Gestionar productos',       'admin'],
+    ['gest_cat',        560, 720, 'Gestionar categorías',      'admin'],
+    ['gest_marca',      770, 720, 'Gestionar marcas',          'admin'],
+    ['gest_prov',       980, 720, 'Gestionar proveedores',     'admin'],
+    ['ver_pedidos',     350, 800, 'Ver todos los pedidos',     'admin'],
+    ['cambiar_estado',  560, 800, 'Cambiar estado de pedido',  'admin'],
+    ['reportes',        770, 800, 'Ver reportes y estadísticas','admin'],
+
+    // SISTEMA
+    ['red_stock',       350, 930, 'Reducir stock al confirmar pedido', 'sys'],
+    ['gen_jwt',         595, 930, 'Generar token JWT',         'sys'],
+    ['calc_total',      840, 930, 'Calcular total del pedido', 'sys'],
+  ];
+
+  ucDefs.forEach(([id, x, y, label, mod])=>{
+    UC[id] = {x, y};
+    drawUC(svg, id, x, y, ucW, ucH, label, MOD[mod], dark);
+  });
+
+  // ═══════════════════════════════════════════
+  // MODULE BOXES (behind UCs)
+  // ═══════════════════════════════════════════
+  // Catálogo
+  drawModule(svg, 455, 50, 380, 185, '📦 Catálogo de Productos', MOD.cat, dark);
+  // Carrito
+  drawModule(svg, 710, 50, 260, 185, '🛒 Carrito', MOD.cart, dark);
+  // Pedidos
+  drawModule(svg, 455, 295, 615, 330, '📋 Pedidos', MOD.order, dark);
+  // Administración
+  drawModule(svg, 145, 668, 1035, 175, '⚙️ Administración', MOD.admin, dark);
+  // Sistema
+  drawModule(svg, 145, 880, 1035, 120, '🤖 Sistema (Procesos Automáticos)', MOD.sys, dark);
+
+  // Re-draw UCs on top of module boxes
+  ucDefs.forEach(([id, x, y, label, mod])=>{
+    drawUC(svg, id, x, y, ucW, ucH, label, MOD[mod], dark);
+  });
+
+  // ═══════════════════════════════════════════
+  // ACTORS
+  // ═══════════════════════════════════════════
+  // Cliente — left outside
+  drawActor(svg, 52, 240, 'Cliente', dark);
+  const clientY = 267; const clientX = 52;
+
+  // Administrador — left outside lower
+  drawActor(svg, 52, 730, 'Administrador', dark);
+  const adminX = 52; const adminY = 757;
+
+  // Sistema — bottom outside (right)
+  drawActor(svg, 1265, 500, 'Sistema', dark);
+  const sysX = 1265; const sysY = 527;
+
+  // ═══════════════════════════════════════════
+  // ASSOCIATIONS — Cliente
+  // ═══════════════════════════════════════════
+  const assocs_cliente = [
+    'registrarse','login','ver_catalogo','buscar','ver_detalle',
+    'agregar','modificar','eliminar',
+    'realizar','historial','det_pedido','reseña','gestionar_dir'
+  ];
+  const lc = dark?'#888':'#555';
+  assocs_cliente.forEach(id=>{
+    const u = UC[id];
+    assoc(svg, clientX+14, clientY, u.x - ucW/2, u.y, dark);
+  });
+
+  // Administrador associations
+  ['login','gest_prod','gest_cat','gest_marca','gest_prov',
+   'ver_pedidos','cambiar_estado','reportes'].forEach(id=>{
+    const u = UC[id];
+    assoc(svg, adminX+14, adminY, u.x - ucW/2, u.y, dark);
+  });
+
+  // Sistema actor associations (secondary — to auto UCs)
+  ['red_stock','gen_jwt','calc_total'].forEach(id=>{
+    const u = UC[id];
+    assoc(svg, sysX-14, sysY, u.x + ucW/2, u.y, dark);
+  });
+
+  // Sistema actor also linked to its processes from within
+  // Additional system links
+  assoc(svg, sysX-14, sysY, UC.realizar.x+ucW/2, UC.realizar.y, dark);
+
+  // ═══════════════════════════════════════════
+  // <<include>> relations (dashed + arrowhead)
+  // ═══════════════════════════════════════════
+  const inclColor = dark ? '#5ea8b8' : '#2563A8';
+  const extColor  = dark ? '#e07070' : '#9B1C1C';
+  const sysColor  = dark ? '#c07070' : '#7B1C1C';
+
+  // realizar → sel_dir
+  drawLine(svg, UC.realizar.x, UC.realizar.y+20, UC.sel_dir.x, UC.sel_dir.y-20,
+    inclColor, true, '<<include>>', dark);
+  // realizar → vaciar
+  drawLine(svg, UC.realizar.x, UC.realizar.y+20, UC.vaciar.x, UC.vaciar.y-20,
+    inclColor, true, '<<include>>', dark);
+  // reseña → haber_pedido
+  drawLine(svg, UC.reseña.x, UC.reseña.y+20, UC.haber_pedido.x, UC.haber_pedido.y-20,
+    inclColor, true, '<<include>>', dark);
+
+  // <<extend>>
+  // registrarse extends login
+  drawLine(svg, UC.registrarse.x, UC.registrarse.y+20, UC.login.x, UC.login.y-20,
+    extColor, true, '<<extend>>', dark);
+
+  // Sistema triggers
+  // realizar pedido → reducir stock
+  drawLine(svg, UC.realizar.x+80, UC.realizar.y+20, UC.red_stock.x, UC.red_stock.y-20,
+    sysColor, true, '<<include>>', dark);
+  // realizar pedido → calc total
+  drawLine(svg, UC.realizar.x+80, UC.realizar.y, UC.calc_total.x, UC.calc_total.y-20,
+    sysColor, true, '<<include>>', dark);
+  // login → gen jwt
+  drawLine(svg, UC.login.x, UC.login.y+20, UC.gen_jwt.x, UC.gen_jwt.y-20,
+    sysColor, true, '<<include>>', dark);
+
+  // ═══════════════════════════════════════════
+  // TITLE & METADATA
+  // ═══════════════════════════════════════════
+  txt('Diagrama de Casos de Uso — E-commerce REST API (ASP.NET Core)',{
+    x:W/2,y:H-12,'text-anchor':'middle','font-size':'10.5',
+    'font-family':'Satoshi,sans-serif',fill:mc}, svg);
+}
+
+function zoom(d){ scale = Math.max(.35, Math.min(2, scale+d)); render(); }
+function resetZoom(){ scale=1; render(); }
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  const nxt = cur==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme', nxt);
+  document.getElementById('thm').textContent = nxt==='dark'?'☀ Light':'🌙 Dark';
+  render();
+}
+
+render();
+</script>
+</body>
+</html>

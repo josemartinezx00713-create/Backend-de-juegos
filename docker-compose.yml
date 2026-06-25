@@ -1,0 +1,11 @@
+services:
+  postgres:
+    image: postgres:16 # Versión estable de Postgres
+    container_name: postgres_dev # Nombre del contenedor
+    ports:
+      - "5432:5432" # Puerto estándar
+    environment:
+      POSTGRES_PASSWORD: MG0rcia+-* # Contraseña
+      POSTGRES_DB: BackendJuegosDB # Base de datos
+    volumes:
+      - ./data:/var/lib/postgresql/data # Persistencia: los datos se guardan en tu carpeta local

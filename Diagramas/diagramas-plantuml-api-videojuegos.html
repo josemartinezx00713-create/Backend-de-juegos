@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diagramas API REST con PlantUML</title>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=zodiak@500,700&display=swap" rel="stylesheet">
+  <style>
+    :root, [data-theme="light"] {
+      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+      --text-2xl: clamp(2rem, 1.2rem + 2.5vw, 3.5rem);
+      --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem;
+      --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem;
+      --space-12: 3rem; --space-16: 4rem; --space-20: 5rem;
+      --color-bg: #f7f6f2; --color-surface: #f9f8f5; --color-surface-2: #fbfbf9;
+      --color-surface-offset: #edeae5; --color-border: #d4d1ca; --color-divider: #dcd9d5;
+      --color-text: #28251d; --color-text-muted: #6b6a65; --color-text-faint: #9d9b96;
+      --color-primary: #01696f; --color-primary-hover: #0c4e54; --color-primary-highlight: #cedcd8;
+      --color-success: #22c55e; --color-blue: #3b82f6; --color-yellow: #fbbf24; --color-error: #ef4444;
+      --color-purple: #8b5cf6; --color-teal: #10b981; --color-text-inverse: #f9f8f4;
+      --radius-sm: .375rem; --radius-md: .5rem; --radius-lg: .75rem; --radius-xl: 1rem; --radius-full: 9999px;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.06); --shadow-md: 0 8px 24px rgba(0,0,0,.08);
+      --font-body: 'Satoshi', Inter, sans-serif; --font-display: 'Zodiak', Georgia, serif;
+    }
+    [data-theme="dark"] {
+      --color-bg: #171614; --color-surface: #1c1b19; --color-surface-2: #201f1d;
+      --color-surface-offset: #22211f; --color-border: #393836; --color-divider: #262523;
+      --color-text: #cdccca; --color-text-muted: #9d9c9a; --color-text-faint: #6b6a68;
+      --color-primary: #4f98a3; --color-primary-hover: #227f8b; --color-primary-highlight: #313b3b;
+      --color-success: #6daa45; --color-blue: #5591c7; --color-yellow: #edb336; --color-error: #d163a7;
+      --color-purple: #a86fdf; --color-teal: #4fbe9c; --color-text-inverse: #171614;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.2); --shadow-md: 0 12px 32px rgba(0,0,0,.35);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      min-height: 100vh; font-family: var(--font-body); font-size: var(--text-base); line-height: 1.6;
+      color: var(--color-text); background: var(--color-bg);
+      background-image: radial-gradient(circle at top right, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 30%);
+    }
+    img, svg { display: block; max-width: 100%; }
+    a { color: var(--color-primary); }
+    button { font: inherit; cursor: pointer; }
+    .skip-link {
+      position: absolute; left: 1rem; top: -3rem; background: var(--color-primary); color: white;
+      padding: .75rem 1rem; border-radius: var(--radius-md); z-index: 50;
+    }
+    .skip-link:focus { top: 1rem; }
+    .shell { width: min(1120px, calc(100% - 2rem)); margin: 0 auto; }
+    header {
+      position: sticky; top: 0; z-index: 40; backdrop-filter: blur(14px);
+      background: color-mix(in srgb, var(--color-bg) 86%, transparent); border-bottom: 1px solid var(--color-divider);
+    }
+    .nav {
+      display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+      min-height: 72px;
+    }
+    .brand { display: flex; align-items: center; gap: .9rem; text-decoration: none; color: inherit; }
+    .brand-mark {
+      width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--color-primary-highlight), color-mix(in srgb, var(--color-blue) 18%, var(--color-surface)));
+      color: var(--color-primary); box-shadow: var(--shadow-sm);
+    }
+    .brand-mark svg { width: 24px; height: 24px; }
+    .brand h1 { font-family: var(--font-display); font-size: var(--text-lg); line-height: 1; }
+    .brand p { color: var(--color-text-muted); font-size: var(--text-sm); }
+    .actions { display: flex; align-items: center; gap: .75rem; }
+    .theme-toggle, .copy-btn {
+      min-width: 44px; min-height: 44px; border-radius: 999px; border: 1px solid var(--color-border);
+      background: var(--color-surface); color: var(--color-text); padding: 0 .95rem;
+      display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+    .theme-toggle:hover, .copy-btn:hover { transform: translateY(-1px); background: var(--color-surface-2); }
+    main { padding: clamp(var(--space-8), 5vw, var(--space-16)) 0 var(--space-16); }
+    .hero {
+      display: grid; grid-template-columns: 1.2fr .8fr; gap: var(--space-8); align-items: start;
+      margin-bottom: var(--space-12);
+    }
+    .hero-card, .panel, .uml-card {
+      background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-text) 12%, transparent);
+      border-radius: var(--radius-xl); box-shadow: var(--shadow-md);
+    }
+    .hero-copy { padding: clamp(var(--space-6), 4vw, var(--space-10)); }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: .55rem; padding: .45rem .8rem; border-radius: var(--radius-full);
+      background: var(--color-primary-highlight); color: var(--color-primary); font-size: var(--text-xs); font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+      margin-bottom: var(--space-4);
+    }
+    .hero h2 {
+      font-family: var(--font-display); font-size: var(--text-2xl); line-height: 1.02; max-width: 12ch; margin-bottom: var(--space-4);
+    }
+    .hero p { color: var(--color-text-muted); max-width: 58ch; }
+    .meta-grid {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); margin-top: var(--space-6);
+    }
+    .meta-card {
+      padding: var(--space-4); border-radius: var(--radius-lg); background: var(--color-surface-2); border: 1px solid var(--color-divider);
+    }
+    .meta-card strong { display: block; font-size: var(--text-sm); margin-bottom: .2rem; }
+    .meta-card span { color: var(--color-text-muted); font-size: var(--text-sm); }
+    .hero-side { padding: var(--space-6); display: grid; gap: var(--space-4); }
+    .stack { display: grid; gap: .85rem; }
+    .chip {
+      display: inline-flex; align-items: center; width: fit-content; padding: .45rem .75rem; border-radius: var(--radius-full);
+      background: var(--color-surface-offset); border: 1px solid var(--color-border); color: var(--color-text-muted); font-size: var(--text-xs); font-weight: 700;
+    }
+    .legend {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem;
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: .75rem; padding: .9rem 1rem; border-radius: var(--radius-lg);
+      background: var(--color-surface-2); border: 1px solid var(--color-divider);
+    }
+    .swatch { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 16px; }
+    .section-head {
+      display: flex; justify-content: space-between; gap: var(--space-4); align-items: end; margin-bottom: var(--space-5);
+    }
+    .section-head h3 { font-family: var(--font-display); font-size: var(--text-xl); }
+    .section-head p { color: var(--color-text-muted); max-width: 58ch; }
+    .uml-grid { display: grid; gap: var(--space-6); }
+    .uml-card { overflow: clip; }
+    .uml-top {
+      display: flex; justify-content: space-between; gap: var(--space-4); align-items: start; padding: var(--space-5) var(--space-5) 0;
+    }
+    .uml-top h4 { font-size: var(--text-lg); }
+    .uml-top p { color: var(--color-text-muted); font-size: var(--text-sm); max-width: 60ch; }
+    .uml-actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+    .uml-wrap { padding: var(--space-5); }
+    pre {
+      overflow: auto; background: #0f172a; color: #e2e8f0; border-radius: var(--radius-lg); padding: var(--space-5);
+      font-size: 0.94rem; line-height: 1.5; border: 1px solid rgba(255,255,255,.08);
+    }
+    .notes {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); margin-top: var(--space-10);
+    }
+    .note {
+      padding: var(--space-5); border-radius: var(--radius-lg); background: var(--color-surface); border: 1px solid var(--color-divider);
+    }
+    .note h4 { margin-bottom: .45rem; font-size: var(--text-base); }
+    .note p { color: var(--color-text-muted); font-size: var(--text-sm); }
+    footer {
+      padding: var(--space-8) 0 var(--space-12); color: var(--color-text-muted); font-size: var(--text-sm);
+    }
+    code.inline {
+      background: var(--color-surface-offset); border: 1px solid var(--color-border); border-radius: .45rem; padding: .15rem .45rem;
+      font-size: .95em;
+    }
+    @media (max-width: 900px) {
+      .hero, .notes { grid-template-columns: 1fr; }
+      .section-head, .uml-top, .nav { align-items: start; }
+      .nav { flex-direction: column; padding: .75rem 0; }
+      .legend, .meta-grid { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <a href="#contenido" class="skip-link">Saltar al contenido</a>
+  <header>
+    <div class="shell nav">
+      <a class="brand" href="#inicio">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-label="Logo">
+            <path d="M4 8.5h16"/>
+            <path d="M7 15.5h10"/>
+            <path d="M6.5 8.5l2.8 7h5.4l2.8-7"/>
+          </svg>
+        </span>
+        <span>
+          <h1>Diagramas PlantUML</h1>
+          <p>API REST de catálogo de videojuegos</p>
+        </span>
+      </a>
+      <div class="actions">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Cambiar tema">
+          <span aria-hidden="true">◐</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido" class="shell">
+    <section class="hero" id="inicio">
+      <article class="hero-card hero-copy">
+        <span class="eyebrow">HTML + PlantUML</span>
+        <h2>Flujos REST listos para pegar y renderizar.</h2>
+        <p>Esta página reúne tres diagramas separados en formato <strong>PlantUML</strong>, escritos en español y siguiendo tu convención visual: inicio/fin en verde, procesos en azul, decisiones en amarillo y errores en rojo.</p>
+        <div class="meta-grid">
+          <div class="meta-card"><strong>Flujo 1</strong><span>POST /api/games — Crear un juego</span></div>
+          <div class="meta-card"><strong>Flujo 2</strong><span>GET /api/games — Listado con filtros</span></div>
+          <div class="meta-card"><strong>Flujo 3</strong><span>DELETE /api/games/{id} — Eliminar juego</span></div>
+          <div class="meta-card"><strong>Uso sugerido</strong><span>PlantUML Server, VS Code, IntelliJ o documentación técnica</span></div>
+        </div>
+      </article>
+
+      <aside class="hero-card hero-side">
+        <span class="chip">Convención aplicada</span>
+        <div class="legend">
+          <div class="legend-item"><span class="swatch" style="background: var(--color-success)"></span><div><strong>Verde</strong><div>Inicio / Fin</div></div></div>
+          <div class="legend-item"><span class="swatch" style="background: var(--color-blue)"></span><div><strong>Azul</strong><div>Proceso</div></div></div>
+          <div class="legend-item"><span class="swatch" style="background: var(--color-yellow)"></span><div><strong>Amarillo</strong><div>Decisión</div></div></div>
+          <div class="legend-item"><span class="swatch" style="background: var(--color-error)"></span><div><strong>Rojo</strong><div>Error HTTP</div></div></div>
+        </div>
+        <div class="stack">
+          <p><strong>Nota:</strong> PlantUML no usa paralelogramos de forma nativa en los activity diagrams clásicos, así que aquí se representa la entrada/salida con bloques etiquetados y color diferenciador para mantener la intención visual.</p>
+          <p>También se incluyen los códigos HTTP dentro de cada salida para que puedas reutilizar estos diagramas en documentación de arquitectura, endpoints o reportes académicos.</p>
+        </div>
+      </aside>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div>
+          <h3>Diagramas en PlantUML</h3>
+          <p>Cada bloque incluye el código completo. El botón copia el contenido al portapapeles para usarlo directamente.</p>
+        </div>
+      </div>
+
+      <div class="uml-grid">
+        <article class="uml-card">
+          <div class="uml-top">
+            <div>
+              <h4>Flujo 1 · Crear un juego</h4>
+              <p>Valida campos requeridos y referencias foráneas antes de guardar el recurso y responder con <code class="inline">201 Created</code>.</p>
+            </div>
+            <div class="uml-actions">
+              <button class="copy-btn" data-copy-target="uml1">Copiar código</button>
+            </div>
+          </div>
+          <div class="uml-wrap">
+<pre id="uml1">@startuml
+skinparam backgroundColor transparent
+skinparam activity {
+  StartColor #22c55e
+  EndColor #22c55e
+  BarColor #3b82f6
+  DiamondBackgroundColor #fbbf24
+  DiamondBorderColor #d97706
+  DiamondFontColor #111827
+  BackgroundColor #3b82f6
+  BorderColor #2563eb
+  FontColor white
+}
+skinparam note {
+  BackgroundColor #8b5cf6
+  BorderColor #7c3aed
+  FontColor white
+}
+
+start
+note: Entrada\nAdmin envía datos del juego\nTitle, Price, DeveloperId, PublisherId, GenreId
+
+if (¿Todos los campos requeridos están presentes?) then (Sí)
+  if (¿Existe el DeveloperId en la BD?) then (Sí)
+    if (¿Existe el PublisherId en la BD?) then (Sí)
+      if (¿Existe el GenreId en la BD?) then (Sí)
+        :Guardar juego en BD;
+        #10b981:201 Created\nRetornar GameDto;
+        stop
+      else (No)
+        #ef4444:404 Not Found\nGénero no encontrado;
+        stop
+      endif
+    else (No)
+      #ef4444:404 Not Found\nDistribuidora no encontrada;
+      stop
+    endif
+  else (No)
+    #ef4444:404 Not Found\nDesarrollador no encontrado;
+    stop
+  endif
+else (No)
+  #ef4444:400 Bad Request\nDatos inválidos;
+  stop
+endif
+@enduml</pre>
+          </div>
+        </article>
+
+        <article class="uml-card">
+          <div class="uml-top">
+            <div>
+              <h4>Flujo 2 · Obtener lista con filtro</h4>
+              <p>Aplica filtros opcionales por <code class="inline">genreId</code> y <code class="inline">search</code>, devolviendo <code class="inline">200 OK</code> tanto para resultados como para lista vacía.</p>
+            </div>
+            <div class="uml-actions">
+              <button class="copy-btn" data-copy-target="uml2">Copiar código</button>
+            </div>
+          </div>
+          <div class="uml-wrap">
+<pre id="uml2">@startuml
+skinparam backgroundColor transparent
+skinparam activity {
+  StartColor #22c55e
+  EndColor #22c55e
+  BarColor #3b82f6
+  DiamondBackgroundColor #fbbf24
+  DiamondBorderColor #d97706
+  DiamondFontColor #111827
+  BackgroundColor #3b82f6
+  BorderColor #2563eb
+  FontColor white
+}
+skinparam note {
+  BackgroundColor #8b5cf6
+  BorderColor #7c3aed
+  FontColor white
+}
+
+start
+note: Entrada\nRequest con parámetros opcionales\ngenreId, search
+
+if (¿Se envió parámetro genreId?) then (Sí)
+  :Filtrar juegos\nWHERE GenreId = genreId;
+else (No)
+  :Obtener todos los juegos;
+endif
+
+if (¿Se envió parámetro search?) then (Sí)
+  :Filtrar juegos\nWHERE Title LIKE %search%;
+else (No)
+  :Continuar;
+endif
+
+if (¿Se encontraron resultados?) then (Sí)
+  :Mapear entidades a GameDto;
+  #10b981:200 OK\nRetornar List<GameDto>;
+  stop
+else (No)
+  #10b981:200 OK\nRetornar [];
+  stop
+endif
+@enduml</pre>
+          </div>
+        </article>
+
+        <article class="uml-card">
+          <div class="uml-top">
+            <div>
+              <h4>Flujo 3 · Eliminar un juego</h4>
+              <p>Busca el recurso por ID y decide entre <code class="inline">404 Not Found</code> o <code class="inline">204 No Content</code>.</p>
+            </div>
+            <div class="uml-actions">
+              <button class="copy-btn" data-copy-target="uml3">Copiar código</button>
+            </div>
+          </div>
+          <div class="uml-wrap">
+<pre id="uml3">@startuml
+skinparam backgroundColor transparent
+skinparam activity {
+  StartColor #22c55e
+  EndColor #22c55e
+  BarColor #3b82f6
+  DiamondBackgroundColor #fbbf24
+  DiamondBorderColor #d97706
+  DiamondFontColor #111827
+  BackgroundColor #3b82f6
+  BorderColor #2563eb
+  FontColor white
+}
+skinparam note {
+  BackgroundColor #8b5cf6
+  BorderColor #7c3aed
+  FontColor white
+}
+
+start
+note: Entrada\nAdmin envía request con GameId
+:Buscar juego por GameId en BD;
+
+if (¿Existe el juego?) then (Sí)
+  :Eliminar juego de la BD;
+  #10b981:204 No Content;
+  stop
+else (No)
+  #ef4444:404 Not Found;
+  stop
+endif
+@enduml</pre>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="notes">
+      <article class="note">
+        <h4>Compatibilidad</h4>
+        <p>El código funciona bien en renderizadores estándar de PlantUML que soportan diagramas de actividad con <code class="inline">if/then/else</code> y coloreado inline.</p>
+      </article>
+      <article class="note">
+        <h4>Ajuste visual</h4>
+        <p>Si quieres un estilo más cercano a BPMN o UML clásico, se puede rehacer con <code class="inline">partition</code>, <code class="inline">legend</code> y temas personalizados.</p>
+      </article>
+      <article class="note">
+        <h4>Uso académico</h4>
+        <p>También sirve para anexarlo en documentación de endpoints, Swagger complementario o reportes de análisis y diseño de sistemas.</p>
+      </article>
+    </section>
+  </main>
+
+  <footer class="shell">
+    <p>Archivo HTML autónomo con los tres diagramas en PlantUML y botones de copia al portapapeles.</p>
+  </footer>
+
+  <script>
+    (function () {
+      const root = document.documentElement;
+      const toggle = document.querySelector('[data-theme-toggle]');
+      let theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      root.setAttribute('data-theme', theme);
+      const paintToggle = () => {
+        toggle.innerHTML = theme === 'dark' ? '<span aria-hidden="true">☀</span>' : '<span aria-hidden="true">☾</span>';
+        toggle.setAttribute('aria-label', theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
+      };
+      paintToggle();
+      toggle?.addEventListener('click', () => {
+        theme = theme === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', theme);
+        paintToggle();
+      });
+
+      document.querySelectorAll('[data-copy-target]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const target = document.getElementById(btn.getAttribute('data-copy-target'));
+          if (!target) return;
+          const text = target.innerText;
+          try {
+            await navigator.clipboard.writeText(text);
+            const prev = btn.textContent;
+            btn.textContent = 'Copiado';
+            setTimeout(() => btn.textContent = prev, 1400);
+          } catch {
+            const range = document.createRange();
+            range.selectNodeContents(target);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+            document.execCommand('copy');
+            sel.removeAllRanges();
+            const prev = btn.textContent;
+            btn.textContent = 'Copiado';
+            setTimeout(() => btn.textContent = prev, 1400);
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

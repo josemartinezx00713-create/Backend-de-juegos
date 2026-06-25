@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="BackendJuegos.API/BackendJuegos.API.csproj" />
+  <Project Path="BackendJuegos.Application/BackendJuegos.Application.csproj" />
+  <Project Path="BackendJuegos.Domain/BackendJuegos.Domain.csproj" />
+  <Project Path="BackendJuegos.Infrastructure/BackendJuegos.Infrastructure.csproj" />
+</Solution>
