@@ -28,6 +28,10 @@ namespace BackendJuegos.Api.Request
         [Required(ErrorMessage = "Los ids de los géneros son requeridos")]
         public List<int> GenerosIds { get; set; } = new();
 
+        [Required(ErrorMessage = "Los ids de las plataformas son requeridos")]
+        public List<int> PlataformasIds { get; set; } = new();
+
+
         [Required(ErrorMessage = "El id del usuario desarrollador es requerido")]
         public string ApplicationUserId { get; set; } = null!;
 
