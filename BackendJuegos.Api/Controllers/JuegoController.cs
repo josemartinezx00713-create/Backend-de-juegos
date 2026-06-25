@@ -61,6 +61,7 @@ namespace BackendJuegos.Api.Controllers
                 Estado = request.Estado,
                 FechaSalida = request.FechaSalida,
                 GenerosIds = request.GenerosIds,
+                PlataformasIds = request.PlataformasIds,
                 ApplicationUserId = request.ApplicationUserId
             };
 
@@ -96,6 +97,7 @@ namespace BackendJuegos.Api.Controllers
                 Estado = request.Estado,
                 FechaSalida = request.FechaSalida,
                 GenerosIds = request.GenerosIds,
+                PlataformasIds = request.PlataformasIds,
                 ApplicationUserId = request.ApplicationUserId
             };
 
